@@ -1,0 +1,22 @@
+.dashboard-container {
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+.dashboard-header {
+    font-size: 2rem;
+    color: #333;
+}
+
+.dashboard-card {
+    background-color: #fff;
+    padding: 15px;
+    margin: 10px;
+    border-radius: 8px;
+}
+
+.dashboard-card h2 {
+    font-size: 1.5rem;
+    color: #555;
+}
+

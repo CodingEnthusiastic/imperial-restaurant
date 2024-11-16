@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Details</title>
+
+    <!-- CSS Styling -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        h3 {
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table th, table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        table th {
+            background-color: #f8f8f8;
+        }
+
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+        }
+
+        .order-form input {
+            padding: 10px;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .order-form button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .order-form button:hover {
+            background-color: #45a049;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Order Details</h1>
+        
+        <!-- Order Information -->
+        <h2>Order ID: <%= order.id %></h2>
+        <p>Customer ID: <%= order.customer_id %></p>
+        
+        <h3>Ordered Dishes</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Dish ID</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% order.dishes.forEach(dish => { %>
+                    <tr>
+                        <td><%= dish.dish_id %></td>
+                        <td><%= dish.quantity %></td>
+                        <td>$<%= dish.total_price %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+
+        <h3>Bill</h3>
+        <p>Bill ID: <%= bill.id %></p>
+        <p>Total Amount: $<%= bill.total_amount %></p>
+
+        <a href="/order/<%= order.id %>" class="btn">Back to Order Details</a>
+
+        <!-- Order Form -->
+        <h3>Place a New Order</h3>
+        <form class="order-form" action="/place-order" method="POST">
+            <label for="customerId">Customer ID:</label>
+            <input type="number" id="customerId" name="customerId" required>
+
+            <label for="dishes">Select Dishes and Quantities:</label>
+            <div id="dishes-container">
+                <div>
+                    <label for="dishId">Dish ID:</label>
+                    <input type="number" name="dishes[0][dishId]" required>
+                    <label for="quantity">Quantity:</label>
+                    <input type="number" name="dishes[0][quantity]" required>
+                </div>
+            </div>
+
+            <button type="submit">Place Order</button>
+        </form>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Dynamically add new dish input fields
+            let dishCount = 1;
+
+            const addDishButton = document.createElement('button');
+            addDishButton.textContent = 'Add Another Dish';
+            addDishButton.style.marginTop = '10px';
+            document.querySelector('.order-form').appendChild(addDishButton);
+
+            addDishButton.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                const dishContainer = document.createElement('div');
+                dishContainer.innerHTML = `
+                    <label for="dishId">Dish ID:</label>
+                    <input type="number" name="dishes[${dishCount}][dishId]" required>
+                    <label for="quantity">Quantity:</label>
+                    <input type="number" name="dishes[${dishCount}][quantity]" required>
+                `;
+                document.querySelector('#dishes-container').appendChild(dishContainer);
+
+                dishCount++;
+            });
+        });
+    </script> 
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard</title>
+    <style>
+        /* General reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Navbar styling */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #333;
+            padding: 1em 2em;
+            color: white;
+        }
+        .navbar h1 {
+            font-size: 1.5em;
+        }
+        .navbar ul {
+            display: flex;
+            list-style: none;
+        }
+        .navbar ul li {
+            margin-left: 1.5em;
+        }
+        .navbar ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5em;
+            transition: background-color 0.3s;
+        }
+        .navbar ul li a:hover {
+            background-color: #555;
+            border-radius: 5px;
+        }
+
+        /* Search bar styling */
+        .search-bar {
+            margin: 1.5em auto;
+            text-align: center;
+        }
+        .search-bar input[type="text"] {
+            padding: 0.5em 1em;
+            width: 50%;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Dish selection styling */
+        .dish-list {
+            max-width: 800px;
+            margin: 2em auto;
+            padding: 1em;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .dish-list h2 {
+            font-size: 1.8em;
+            margin-bottom: 1em;
+            color: #333;
+        }
+        .dish-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        .dish-list li {
+            padding: 1em;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dish-list li:last-child {
+            border-bottom: none;
+        }
+        .dish-info {
+            display: flex;
+            align-items: center;
+        }
+        .dish-info label {
+            margin-left: 0.5em;
+        }
+        .dish-price {
+            font-weight: bold;
+            color: #333;
+        }
+        .quantity {
+            margin-left: 1em;
+            font-size: 0.9em;
+        }
+
+        /* Submit button styling */
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 0.8em;
+            font-size: 1.2em;
+            color: white;
+            background-color: #28a745;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .submit-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <h1>Customer Dashboard</h1>
+        <ul>
+            <li><a href="/view-custbills">View Bills</a></li>
+            <li><a href="/login">Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Search bar -->
+    <div class="search-bar">
+        <input type="text" id="search" placeholder="Search for a dish..." onkeyup="filterDishes()">
+    </div>
+
+    <!-- Dish selection form -->
+    <div class="dish-list">
+        <h2>Select Dishes</h2>
+        <form action="/customer/place-order" method="POST">
+            <ul id="dishList">
+                <% dishes.forEach(dish => { %>
+                    <li class="dish-item">
+                        <div class="dish-info">
+                            <input type="checkbox" name="dishes[]" value="<%= dish.id %>">
+                            <label><%= dish.dish_name %></label>
+                        </div>
+                        <span class="dish-price">$<%= dish.price %></span>
+                        <label class="quantity">
+                            Quantity: 
+                            <input type="number" name="quantity_<%= dish.id %>" value="1" min="1">
+                        </label>
+                    </li>
+                <% }) %>
+            </ul>
+            <button type="submit" class="submit-btn">Place Order</button>
+        </form>
+    </div>
+
+    <script>
+        // Search filter function
+        function filterDishes() {
+            const searchInput = document.getElementById('search').value.toLowerCase();
+            const dishes = document.querySelectorAll('.dish-item');
+            dishes.forEach(dish => {
+                const dishName = dish.querySelector('label').innerText.toLowerCase();
+                if (dishName.includes(searchInput)) {
+                    dish.style.display = 'flex';
+                } else {
+                    dish.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+

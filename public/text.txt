@@ -1,0 +1,1053 @@
+const express = require('express');
+const session = require('express-session');
+const path = require('path');
+const { Client } = require('pg');
+
+const app = express();
+const port = 3000; // You can change this port number if needed
+
+// Set views and static directory
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Body parsing middleware
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// Session middleware setup
+app.use(session({
+    secret: 'yourSecretKey', // Change this key to something secure
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // Set to true if using HTTPS
+}));
+
+// Set EJS as the view engine
+app.set('view engine', 'ejs');
+
+// PostgreSQL client setup
+const client = new Client({
+    user: 'postgres',
+    host: 'localhost',
+    database: 'restaurant_db',
+    password: 'Rishabh@1234',
+    port: 5432,
+});
+
+client.connect();
+
+// Serve the home page
+app.get('/', (req, res) => {
+    res.render('index');
+});
+
+// Serve the login page
+app.get('/login', (req, res) => {
+    res.render('login');
+});
+
+// Serve the about page
+app.get('/about', (req, res) => {
+    res.render('about');
+});
+
+// Serve the menu page
+app.get('/menu', async (req, res) => {
+    try {
+        const result = await client.query('SELECT * FROM dishes');
+        res.render('menu', { dishes: result.rows });
+    } catch (err) {
+        console.error('Error fetching dishes:', err);
+        res.status(500).send('An error occurred while fetching the menu.');
+    }
+});
+
+// Serve the contact page
+app.get('/contact', (req, res) => {
+    res.render('contact');
+});
+
+// Serve the send-message page
+app.get('/send-message', (req, res) => {
+    res.render('send-message');
+});
+
+// Handle send message post request
+app.post('/send-message', async (req, res) => {
+    const { name, email, message } = req.body;
+
+    try {
+        await client.query('INSERT INTO contacts (name, email, message) VALUES ($1, $2, $3) RETURNING *', [name, email, message]);
+        res.status(200).send('Thank you! Your message has been sent.');
+    } catch (error) {
+        console.error('Error saving message:', error);
+        res.status(500).send('An error occurred while sending your message.');
+    }
+});
+
+// Login endpoint
+app.post('/login', async (req, res) => {
+    const { email, password, user_type } = req.body;
+
+    try {
+        const result = await client.query('SELECT * FROM users WHERE email = $1 AND user_type = $2', [email, user_type]);
+
+        if (result.rows.length > 0 && result.rows[0].password === password) {
+            req.session.userRole = user_type;  // Save the role in the session
+            res.status(200).json({ success: true, message: `${user_type} logged in successfully!` });
+        } else {
+            res.status(401).json({ success: false, message: 'Invalid credentials, please try again.' });
+        }
+    } catch (err) {
+        console.error('Error during login:', err);
+        res.status(500).json({ success: false, message: 'Server error, please try again later.' });
+    }
+});
+
+// Serve the registration page
+app.get('/register', (req, res) => {
+    res.render('register');
+});
+
+// Register endpoint
+app.post('/register', async (req, res) => {
+    const { email, password, user_type } = req.body;
+
+    try {
+        const result = await client.query('INSERT INTO users (email, password, user_type) VALUES ($1, $2, $3) RETURNING *', [email, password, user_type]);
+
+        if (result.rows.length > 0) {
+            res.status(200).json({ success: true, message: 'Registration successful!' });
+        } else {
+            res.status(400).json({ success: false, message: 'Registration failed. Please try again.' });
+        }
+    } catch (err) {
+        if (err.code === '23505') {
+            return res.status(400).json({ success: false, message: 'Email already exists.' });
+        }
+        console.error('Error during registration:', err);
+        res.status(500).json({ success: false, message: 'Server error, please try again later.' });
+    }
+});
+
+// Dashboard route based on user role
+app.get('/dashboard', (req, res) => {
+    const userRole = req.session.userRole;
+
+    if (userRole === 'admin') {
+        res.render('admin-dashboard');
+    } else if (userRole === 'staff') {
+        res.render('staff-dashboard');
+    } else if (userRole === 'customer') {
+        res.render('customer-dashboard');
+    } else {
+        res.redirect('/login');
+    }
+});
+
+// Admin dashboard route
+// Admin dashboard route
+app.get('/admin-dashboard', async (req, res) => {
+    if (req.session.userRole !== 'admin') {
+        return res.redirect('/login');
+    }
+
+    try {
+        const chefsResult = await client.query('SELECT users.email, chefs.specialization FROM users INNER JOIN chefs ON users.id = chefs.id');
+        const billsResult = await client.query('SELECT users.email, bills.amount, bills.payment_status, bills.payment_method FROM bills JOIN orders ON bills.order_id = orders.id JOIN users ON orders.customer_id = users.id');
+
+        res.render('admin-dashboard', {
+            chefs: chefsResult.rows,
+            bills: billsResult.rows
+        });
+    } catch (err) {
+        console.error('Error fetching data:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+
+
+app.get('/admin/manage-chefs', async (req, res) => {
+    if (req.session.userRole !== 'admin') {
+        return res.redirect('/login');
+    }
+
+    const { attribute, value, email } = req.query;
+    console.log('Received query params:', req.query); // Log the entire query object
+
+    let query;
+    let queryParams = [];
+
+    if (attribute === 'specialization' && value) {
+        query = 'SELECT chefs.email, chefs.specialization, chefs.id FROM users INNER JOIN chefs ON users.id = chefs.id WHERE chefs.specialization = $1';
+        queryParams.push(value);
+    } else if (attribute === 'id' && value) {
+        query = 'SELECT chefs.email, chefs.specialization, chefs.id FROM users INNER JOIN chefs ON users.id = chefs.id WHERE chefs.id = $1';
+        queryParams.push(parseInt(value, 10));
+    } else if (attribute === 'email' && email) { // Check for the 'email' parameter directly
+        console.log("IM in email check");
+        query = 'SELECT chefs.email, chefs.specialization, chefs.id FROM users INNER JOIN chefs ON users.id = chefs.id WHERE chefs.email = $1';
+        queryParams.push(email); // Use the 'email' parameter directly
+    } else {
+        query = 'SELECT chefs.email, chefs.specialization, chefs.id FROM users INNER JOIN chefs ON users.id = chefs.id';
+    }
+
+    try {
+        const result = await client.query(query, queryParams);
+        res.render('manage-chefs', {
+            chefs: result.rows,
+        });
+    } catch (err) {
+        console.error('Error fetching chefs:', err);
+        res.send('Error fetching chefs data');
+    }
+});
+
+
+// Add Chef Route
+app.post('/admin/add-chef', async (req, res) => {
+    const { email, chef_name, specialization } = req.body; // Add chef_name here
+    const pass = "1111";  // Default password for the new chef
+
+    try {
+        // Insert into users table to create the chef user
+        const userResult = await client.query(
+            'INSERT INTO users (email, password, user_type) VALUES ($1, $2, $3) RETURNING id',
+            [email, pass, 'staff']
+        );
+        const userId = userResult.rows[0].id;
+
+        // Insert into chefs table with the user_id from the users table
+        await client.query(
+            'INSERT INTO chefs (chef_name, specialization, email) VALUES ($1, $2, $3)',
+            [chef_name, specialization, email]
+        );
+
+        // Redirect after successful insertion
+        res.redirect('/admin/manage-chefs');
+    } catch (err) {
+        console.error('Error adding chef:', err);
+        res.send('Error adding chef');
+    }
+});
+
+
+// Edit Chef Route
+app.post('/admin/edit-chef/:chefId', async (req, res) => {
+    const { specialization } = req.body;
+    const chefId = req.params.chefId;
+
+    try {
+        await client.query('UPDATE chefs SET specialization = $1 WHERE id = $2', [specialization, chefId]);
+        res.redirect('/admin/manage-chefs');
+    } catch (err) {
+        console.error('Error editing chef:', err);
+        res.send('Error editing chef');
+    }
+});
+
+// Delete Chef Route
+app.post('/admin/delete-chef/:chefId', async (req, res) => {
+    const chefId = req.params.chefId;
+
+    try {
+        await client.query('DELETE FROM chefs WHERE id = $1', [chefId]);
+        await client.query('DELETE FROM users WHERE id = (SELECT user_id FROM chefs WHERE id = $1)', [chefId]);
+        res.redirect('/admin/manage-chefs');
+    } catch (err) {
+        console.error('Error deleting chef:', err);
+        res.send('Error deleting chef');
+    }
+});
+
+
+
+// View Bills Route
+app.get('/admin/view-bills', async (req, res) => {
+    if (req.session.userRole !== 'admin') {
+        return res.redirect('/login');
+    }
+
+    try {
+        const billsResult = await client.query('SELECT users.email, bills.amount, bills.payment_status, bills.payment_method FROM bills JOIN orders ON bills.order_id = orders.id JOIN users ON orders.customer_id = users.id');
+        res.render('view-bills', { bills: billsResult.rows });
+    } catch (err) {
+        console.error('Error fetching bills:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+
+// //staff dashboard
+app.get('/staff-dashboard', async (req, res) => {
+    if (req.session.userRole !== 'staff') {
+        return res.redirect('/login');
+    }
+
+    try {
+        // Fetch all dishes
+        const dishesQuery = 'SELECT * FROM dishes';
+        const dishesResult = await client.query(dishesQuery);
+        const dishes = dishesResult.rows;
+
+        // Fetch orders with associated dish details and customer names
+        const ordersQuery = `
+            SELECT orders.id, orders.customer_id, orders.order_date, orders.quantity, dishes.dish_name, users.email as user_name
+            FROM orders
+            LEFT JOIN dishes ON orders.dish_id = dishes.id
+            LEFT JOIN users ON orders.customer_id = users.id
+        `;
+        const ordersResult = await client.query(ordersQuery);
+
+        // Organize orders with associated dishes
+        const orders = ordersResult.rows.reduce((acc, row) => {
+            const { id, customer_id, order_date, quantity, dish_name, user_name } = row;
+            let order = acc.find(o => o.id === id);
+            if (!order) {
+                order = {
+                    id,
+                    customer_id,
+                    order_date,
+                    user_name,
+                    dishes: []
+                };
+                acc.push(order);
+            }
+            order.dishes.push({ dish_name, quantity });
+            return acc;
+        }, []);
+
+        // Render the staff dashboard with both dishes and orders
+        res.render('staff-dashboard', { dishes, orders });
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        res.status(500).send('Server Error');
+    }
+});
+
+
+// Route to add a new dish
+
+    
+app.post('/staff/add-dish', async (req, res) => {
+    const { dish_name, price, description } = req.body;
+
+    try {
+        // Get the max 'id' from the dishes table
+        const result = await client.query('SELECT MAX(id) FROM dishes');
+        const maxId = result.rows[0].max;
+
+        // Generate new id by adding 1 to the max id
+        const newId = maxId ? maxId + 1 : 1;
+
+        // Insert new dish with the manually generated id
+        await client.query(
+            'INSERT INTO dishes (id, dish_name, price, description) VALUES ($1, $2, $3, $4)',
+            [newId, dish_name, price, description]
+        );
+
+        res.redirect('/staff-dashboard'); // Redirect back to the dashboard after adding the dish
+    } catch (err) {
+        console.error('Error adding dish:', err);
+        res.status(500).send('Error adding dish');
+    }
+});
+
+    
+//edit the dish by staff
+// Edit a dish (GET route to load the form with the existing dish data)
+app.get('/staff/edit-dish/:id', async (req, res) => {
+    const dishId = parseInt(req.params.id);
+
+    try {
+        // Fetch the dish from the database
+        const result = await client.query('SELECT * FROM dishes WHERE id = $1', [dishId]);
+        
+        // If the dish is found, render the edit form with the dish data
+        if (result.rows.length > 0) {
+            const dish = result.rows[0];
+            res.render('edit-dish', { dish: dish });
+        } else {
+            res.status(404).send('Dish not found');
+        }
+    } catch (err) {
+        console.error('Error fetching dish:', err);
+        res.status(500).send('Error fetching dish');
+    }
+});
+
+// Update a dish (POST route to save the updated data)
+app.post('/staff/edit-dish/:id', async (req, res) => {
+    const dishId = parseInt(req.params.id);
+    const { dish_name, price, description } = req.body;
+
+    try {
+        // Update the dish in the database
+        const result = await client.query(
+            'UPDATE dishes SET dish_name = $1, price = $2, description = $3 WHERE id = $4',
+            [dish_name, price, description, dishId]
+        );
+
+        // If the update was successful, redirect back to the dashboard
+        if (result.rowCount > 0) {
+            res.redirect('/staff-dashboard');
+        } else {
+            res.status(404).send('Dish not found');
+        }
+    } catch (err) {
+        console.error('Error updating dish:', err);
+        res.status(500).send('Error updating dish');
+    }
+});
+
+
+// Delete a dish (POST route to handle the form submission)
+app.post('/staff/delete-dish/:id', async (req, res) => {
+    const dishId = parseInt(req.params.id);
+
+    try {
+        // Delete the dish from the database (PostgreSQL query)
+        await client.query('DELETE FROM dishes WHERE id = $1', [dishId]);
+
+        // Redirect back to the dashboard after successful deletion
+        res.redirect('/staff-dashboard');
+    } catch (err) {
+        console.error('Error deleting dish:', err);
+        res.status(500).send('Error deleting dish');
+    }
+});
+
+
+// Complete an order (POST route)
+app.post('/staff/complete-order/:id', (req, res) => {
+    const orderId = parseInt(req.params.id);
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+        order.status = 'Completed';
+        res.redirect('/staff/dashboard');  // Redirect back to the dashboard after completing the order
+    } else {
+        res.status(404).send('Order not found');
+    }
+});
+
+// Simulate an order (POST route to add new orders manually for testing)
+app.post('/staff/add-order', (req, res) => {
+    const { user_name, dish_id, quantity } = req.body;
+    const dish = dishes.find(d => d.id === parseInt(dish_id));
+    if (dish) {
+        const newOrder = {
+            id: orders.length + 1,
+            user_name: user_name,
+            dishes: [{ dish_name: dish.dish_name, quantity: quantity }],
+            status: 'Pending'
+        };
+        orders.push(newOrder);
+        res.redirect('/staff/dashboard');  // Redirect back to the dashboard after adding the order
+    } else {
+        res.status(404).send('Dish not found');
+    }
+});
+
+// Filter dishes by price
+// 
+app.get('/staff-dashboard/filter-dishes', async (req, res) => {
+    if (req.session.userRole !== 'staff') {
+        return res.redirect('/login');
+    }
+
+    const { maxPrice, dishName } = req.query;
+    let query = 'SELECT * FROM dishes WHERE 1=1';
+    let queryParams = [];
+
+    if (maxPrice) {
+        query += ' AND price <= $1';
+        queryParams.push(maxPrice);
+    }
+
+    if (dishName) {
+        query += ` AND dish_name ILIKE '%' || $${queryParams.length + 1} || '%'`;
+        queryParams.push(dishName);
+    }
+
+    try {
+        const dishesResult = await client.query(query, queryParams);
+        const dishes = dishesResult.rows;
+
+        const ordersResult = await client.query('SELECT * FROM orders');
+        const orders = ordersResult.rows;
+
+        res.render('staff-dashboard', { dishes, orders });
+    } catch (error) {
+        console.error("Error filtering dishes:", error);
+        res.status(500).send("Server Error");
+    }
+});
+
+app.get('/dish-names', async (req, res) => {
+    try {
+        const { term } = req.query;
+        const result = await client.query(
+            'SELECT dish_name FROM dishes WHERE dish_name ILIKE $1',
+            [`%${term}%`]
+        );
+        const dishNames = result.rows.map(row => row.dish_name);
+        res.json(dishNames);
+    } catch (error) {
+        console.error("Error fetching dish names:", error);
+        res.status(500).send("Server Error");
+    }
+});
+// Filter orders by ID
+app.get('/staff-dashboard/filter-orders', async (req, res) => {
+    if (req.session.userRole !== 'staff') {
+        return res.redirect('/login');
+    }
+
+    const orderId = parseInt(req.query.orderId);
+
+    try {
+        const ordersResult = await client.query('SELECT * FROM orders WHERE id = $1', [orderId]);
+        const orders = ordersResult.rows;
+
+        const dishesResult = await client.query('SELECT * FROM dishes');
+        const dishes = dishesResult.rows;
+
+        res.render('staff-dashboard', { dishes, orders });
+    } catch (error) {
+        console.error("Error filtering orders:", error);
+        res.status(500).send("Server Error");
+    }
+});
+
+app.post('/staff/complete-order/:orderId', async (req, res) => {
+    const { orderId } = req.params;
+    try {
+        // First, mark the order as completed (if necessary, for logging)
+        await client.query('UPDATE orders SET status = $1 WHERE id = $2', ['Completed', orderId]);
+        
+        // Delete the order from the database
+        await client.query('DELETE FROM orders WHERE id = $1', [orderId]);
+
+        // Redirect to the staff dashboard after completion
+        res.redirect('/staff-dashboard');
+    } catch (error) {
+        console.error("Error completing and deleting the order:", error);
+        res.status(500).send("Error processing the order");
+    }
+});
+
+
+// Start the server
+app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+});
+
+
+
+//unwanted comments
+
+// app.post('/customer/place-order', async (req, res) => {
+//     try {
+//         console.log('Session userId:', req.session.userId);
+// console.log('Session userRole:', req.session.userRole);
+
+//         // Step 1: Ensure user is logged in and the session contains the necessary user information
+//         if (!req.session.userId || req.session.userRole !== 'customer') {
+//             return res.status(401).redirect('/login');  // Unauthorized access if user is not logged in
+//         }
+
+//         const customerId = req.session.userId;
+//         const dishes = req.body.dishes || [];  // An array of dish IDs selected by the customer
+//         if (dishes.length === 0) {
+//             return res.status(400).send('No dishes selected');  // Ensure dishes are selected
+//         }
+
+//         // Step 2: Prepare the quantities array and calculate total amount
+//         const quantities = [];
+//         let totalAmount = 0;
+
+//         for (const dishId of dishes) {
+//             const quantity = req.body[`quantity_${dishId}`] || 1;  // Default to 1 if no quantity provided
+//             quantities.push({ dishId, quantity });
+
+//             // Fetch the price of the dish from the database
+//             const dishQuery = 'SELECT price FROM dishes WHERE id = $1';
+//             const dishResult = await client.query(dishQuery, [dishId]);
+
+//             if (dishResult.rows.length === 0) {
+//                 return res.status(400).send(`Dish with ID ${dishId} not found`);
+//             }
+
+//             const price = dishResult.rows[0].price;
+//             totalAmount += price * quantity;  // Calculate total amount for the order
+//         }
+
+//         // Step 3: Start a database transaction to ensure consistency
+//         await client.query('BEGIN');  // Start transaction
+
+//         // Step 4: Insert the order into the `orders` table
+//         const insertOrderQuery = `
+//             INSERT INTO orders (customer_id, dish_id, quantity, total_amount)
+//             VALUES ($1, $2, $3, $4) RETURNING id
+//         `;
+        
+//         for (const { dishId, quantity } of quantities) {
+//             await client.query(insertOrderQuery, [customerId, dishId, quantity, totalAmount]);
+//         }
+
+//         // Step 5: Insert the bill into the `bills` table
+//         const insertBillQuery = `
+//             INSERT INTO bills (customer_id, total_amount)
+//             VALUES ($1, $2) RETURNING id
+//         `;
+//         const billResult = await client.query(insertBillQuery, [customerId, totalAmount]);
+//         const billId = billResult.rows[0].id;
+
+//         // Step 6: Optionally, link the orders to the bill if needed
+//         const linkBillToOrderQuery = `
+//             UPDATE orders SET bill_id = $1 WHERE customer_id = $2 AND bill_id IS NULL
+//         `;
+//         await client.query(linkBillToOrderQuery, [billId, customerId]);
+
+//         // Step 7: Commit the transaction
+//         await client.query('COMMIT');  // Commit transaction
+
+//         // Step 8: Redirect to the dashboard with a success message
+//         res.redirect('/customer/dashboard');
+//     } catch (error) {
+//         // Step 9: Rollback the transaction in case of an error
+//         await client.query('ROLLBACK');
+//         console.error('Error processing the order:', error);
+//         res.status(500).send('Error processing your order');
+//     }
+// });
+// app.post('/customer/place-order', async (req, res) => {
+//     // Ensure the user is logged in and has a valid session
+//     if (req.session.userRole !== 'customer' || !req.session.userId) {
+//         return res.status(403).json({ success: false, message: 'You must be logged in as a customer to place an order.' });
+//     }
+
+//     const customerId = req.session.userId;  // Retrieve userId from session
+//     const { dishes } = req.body;  // An array of dish IDs selected by the customer
+
+//     if (!dishes || dishes.length === 0) {
+//         return res.status(400).json({ success: false, message: 'No dishes selected. Please select dishes to place an order.' });
+//     }
+
+//     const quantities = [];
+//     dishes.forEach(dishId => {
+//         const quantity = req.body[`quantity_${dishId}`] || 1;  // Get the quantity for each dish
+//         quantities.push({ dishId, quantity });
+//     });
+
+//     // Calculate the total amount for the order
+//     let totalAmount = 0;
+//     for (const { dishId, quantity } of quantities) {
+//         const dishQuery = 'SELECT price FROM dishes WHERE id = $1';
+//         const dishResult = await client.query(dishQuery, [dishId]);
+//         const price = dishResult.rows[0]?.price || 0;
+//         totalAmount += price * quantity;
+//     }
+
+//     const insertOrderQuery = `
+//         INSERT INTO orders (customer_id, dish_id, quantity, total_amount)
+//         VALUES ($1, $2, $3, $4) RETURNING id
+//     `;
+
+//     try {
+//         const orderIds = []; // Array to store order IDs
+//         // Insert each order item and store the order ID
+//         for (const { dishId, quantity } of quantities) {
+//             const orderResult = await client.query(insertOrderQuery, [customerId, dishId, quantity, totalAmount]);
+//             orderIds.push(orderResult.rows[0].id); // Store the inserted order ID
+//             console.log(`Order inserted with ID: ${orderResult.rows[0].id}`); // Debugging line to check if the order is inserted correctly
+//         }
+
+//         // Insert the bill into the 'bills' table
+//         const insertBillQuery = `
+//             INSERT INTO bills (customer_id, total_amount, order_id)
+//             VALUES ($1, $2, $3)
+//         `;
+
+//         // Insert the bill for each order with the corresponding order ID
+//         for (const orderId of orderIds) {
+//             await client.query(insertBillQuery, [customerId, totalAmount, orderId]);
+//         }
+
+//         // Pretty-print order details
+//         const orderDetails = {
+//             customerId: customerId,
+//             totalAmount: totalAmount,
+//             dishes: quantities.map(q => ({
+//                 dishId: q.dishId,
+//                 quantity: q.quantity
+//             })),
+//             orderIds: orderIds,
+//         };
+
+//         console.log("Order Details:", JSON.stringify(orderDetails, null, 4));  // Pretty print the order details to the console
+
+//         // Return success response
+//         res.status(200).json({
+//             success: true,
+//             message: 'Order placed successfully!',
+//             orderDetails: orderDetails
+//         });
+//     } catch (err) {
+//         console.error('Error placing order:', err);
+//         res.status(500).json({ success: false, message: 'Server error, please try again later.' });
+//     }
+// });
+
+
+
+
+
+
+// app.get('/customer/bill/:id', async (req, res) => {
+//     const orderId = req.params.id;
+
+//     try {
+//         // Fetch the bill based on the order ID
+//         const billQuery = 'SELECT * FROM bills WHERE customer_id = $1 AND order_id = $2';
+//         const billResult = await client.query(billQuery, [req.session.userId, orderId]);
+//         const bill = billResult.rows[0];
+
+//         if (!bill) {
+//             return res.status(404).send('Bill not found');
+//         }
+
+//         res.render('view-bill', { bill });
+//     } catch (error) {
+//         console.error('Error fetching bill:', error);
+//         res.status(500).send('Server Error');
+//     }
+// });
+
+
+//other commenr
+// app.get('/staff-dashboard', async (req, res) => {
+//     try {
+//         // Fetch orders and dishes from the database
+//         const ordersResult = await client.query(`
+//             SELECT orders.id, orders.customer_id, orders.order_date, 
+//                 order_details.dish_name, order_details.quantity, orders.status
+//             FROM orders
+//             JOIN order_details ON orders.id = order_details.order_id
+//         `);
+
+//         // Process orders and organize them by order id
+//         const orders = ordersResult.rows.reduce((acc, row) => {
+//             const { id, customer_id, order_date, dish_name, quantity, status } = row;
+//             const order = acc.find(o => o.id === id);
+            
+//             if (!order) {
+//                 // Initialize the order with the first dish
+//                 acc.push({
+//                     id,
+//                     customer_id,
+//                     order_date,
+//                     status,
+//                     dish_id: [{ dish_name, quantity }] // Store the first dish
+//                 });
+//             } else {
+//                 // Add additional dishes to the order
+//                 order.dish_id.push({ dish_name, quantity });
+//             }
+
+//             return acc;
+//         }, []);
+
+//         // Render the staff dashboard page with orders
+//         res.render('staff-dashboard', { orders });
+
+//     } catch (error) {
+//         console.error('Error fetching orders:', error);
+//         res.status(500).send('Error fetching data');
+//     }
+// });
+
+
+// Route to add a new dish
+
+    
+
+    // app.get('/admin/manage-chefs', async (req, res) => {
+//     if (req.session.userRole !== 'admin') {
+//         return res.redirect('/login');
+//     }
+
+//     const { attribute, value } = req.query; // Capture 'attribute' and 'value' from the query
+//     let query = 'SELECT chefs.email, chefs.specialization, chefs.id FROM users INNER JOIN chefs ON users.id = chefs.id';
+//     let queryParams = [];
+
+//     // Apply filters based on the selected attribute (id or specialization)
+//     let conditions = [];
+    
+//     if (attribute === 'specialization' && value) {
+//         conditions.push(`chefs.specialization = $1`);
+//         queryParams.push(value);
+//     } else if (attribute === 'id' && value) {
+//         conditions.push(`chefs.id = $2`);
+//         queryParams.push(value);
+//     }
+
+//     // Add the conditions to the query if any filters are applied
+//     if (conditions.length > 0) {
+//         query += ' WHERE ' + conditions.join(' AND ');
+//     }
+
+//     try {
+//         // Execute the query with parameters
+//         const result = await client.query(query, queryParams);
+
+//         // Render the result with filtered chefs
+//         res.render('manage-chefs', {
+//             chefs: result.rows, // Pass the filtered results
+//         });
+//     } catch (err) {
+//         console.error('Error fetching chefs:', err);
+//         res.send('Error fetching chefs data');
+//     }
+// });
+
+
+// app.get('/admin/manage-chefs', async (req, res) => {
+//     if (req.session.userRole !== 'admin') {
+//         return res.redirect('/login');
+//     }
+
+//     const { attribute, value } = req.query; // Capture 'attribute' and 'value' from the query
+//     let query;
+//     let queryParams = [];
+    
+//     // Determine the query and parameters based on the selected attribute
+//     if (attribute === 'specialization' && value) {
+//         query = 'SELECT chefs.email, chefs.specialization, chefs.id FROM users INNER JOIN chefs ON users.id = chefs.id WHERE chefs.specialization = $1';
+//         queryParams.push(value);
+//     } 
+//     // else if (attribute === 'id' && value) {
+//     //     query = 'SELECT chefs.email, chefs.specialization, chefs.id FROM users INNER JOIN chefs ON users.id = chefs.id WHERE chefs.id = $1';
+//     //     queryParams.push(parseInt(value, 10)); // Ensure value is treated as a number for id filtering
+//     // } 
+//     else if (attribute === 'email' && value) {
+//         console.log("IM in elseif");
+//         query = 'SELECT chefs.email, chefs.specialization, chefs.id FROM users INNER JOIN chefs ON users.id = chefs.id WHERE chefs.email = $1';
+//         queryParams.push(value);
+//     } else {
+//         // If no valid filter is applied, show all chefs
+//         console.log(value);
+//         console.log("else part");
+//         query = 'SELECT chefs.email, chefs.specialization, chefs.id FROM users INNER JOIN chefs ON users.id = chefs.id';
+//     }
+
+//     try {
+//         // Execute the query with parameters if any
+//         const result = await client.query(query, queryParams);
+
+//         // Render the result with filtered chefs
+//         res.render('manage-chefs', {
+//             chefs: result.rows, // Pass the filtered results
+//         });
+//     } catch (err) {
+//         console.error('Error fetching chefs:', err);
+//         res.send('Error fetching chefs data');
+//     }
+// });
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            background-color: #fff;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button, input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover, input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        form {
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .form-container {
+            margin-top: 30px;
+        }
+
+        .order-status {
+            font-weight: bold;
+        }
+
+        .filter-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-container select {
+            padding: 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Your Staff Dashboard</h1>
+
+    <!-- Filter Options for Orders -->
+    <div class="filter-container">
+        <form action="/staff-dashboard" method="GET">
+            <!-- Status Filter -->
+            <select name="statusFilter">
+                <option value="">Select Status</option>
+                <option value="Pending" <%= statusFilter === 'Pending' ? 'selected' : '' %>>Pending</option>
+                <option value="Completed" <%= statusFilter === 'Completed' ? 'selected' : '' %>>Completed</option>
+            </select>
+
+            <!-- Sorting Filter -->
+            <select name="sortFilter">
+                <option value="oldest" <%= sortFilter === 'oldest' ? 'selected' : '' %>>Oldest</option>
+                <option value="newest" <%= sortFilter === 'newest' ? 'selected' : '' %>>Newest</option>
+            </select>
+
+            <input type="submit" value="Apply Filters">
+        </form>
+    </div>
+
+    <!-- Available Dishes List -->
+    <h2>Available Dishes</h2>
+    <ul>
+        <% dishes.forEach(dish => { %>
+            <li>
+                <strong><%= dish.dish_name %></strong>: $<%= dish.price %> - <%= dish.description %>
+                <form action="/staff/edit-dish/<%= dish.id %>" method="GET" style="display:inline;">
+                    <button type="submit">Edit</button>
+                </form>
+                <form action="/staff/delete-dish/<%= dish.id %>" method="POST" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
+        <% }) %>
+    </ul>
+
+    <!-- Add New Dish Form -->
+    <div class="form-container">
+        <h2>Add New Dish</h2>
+        <form action="/staff/add-dish" method="POST">
+            <label for="dish_name">Dish Name:</label>
+            <input type="text" id="dish_name" name="dish_name" required>
+
+            <label for="price">Price:</label>
+            <input type="number" id="price" name="price" required>
+
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" required></textarea>
+
+            <input type="submit" value="Add Dish">
+        </form>
+    </div>
+
+    <!-- Current Orders List -->
+    <h2>Current Orders</h2>
+    <ul>
+        <% orders.forEach(order => { %>
+            <li>
+                <strong>Order ID: <%= order.id %></strong> <br> 
+                - Customer ID: <%= order.customer_id %> <br>
+                - Date: <%= order.order_date %> <br>
+                <ul>
+                    <% if (Array.isArray(order.dishes)) { %>
+                        <% order.dishes.forEach(dish => { %>
+                            <li><%= dish.dish_name %> x <%= dish.quantity %></li>
+                        <% }) %>
+                    <% } else { %>
+                        <li>No dishes available for this order.</li>
+                    <% } %>
+                </ul>
+                <p class="order-status">Status: <%= order.status %></p>
+                <form action="/staff/complete-order/<%= order.id %>" method="POST" style="display:inline;">
+                    <button type="submit">Complete Order</button>
+                </form>
+            </li>
+        <% }) %>
+    </ul>
+
+    <script>
+        document.getElementById('dishName').addEventListener('input', async function () {
+            const term = this.value;
+            const suggestionBox = document.getElementById('dishNameSuggestions');
+
+            if (term.length > 0) {
+                try {
+                    const response = await fetch(`/dish-names?term=${term}`);
+                    const dishNames = await response.json();
+
+                    suggestionBox.innerHTML = '';
+                    dishNames.forEach(name => {
+                        const suggestionItem = document.createElement('li');
+                        suggestionItem.textContent = name;
+                        suggestionItem.onclick = () => {
+                            document.getElementById('dishName').value = name;
+                            suggestionBox.innerHTML = '';
+                        };
+                        suggestionBox.appendChild(suggestionItem);
+                    });
+                } catch (error) {
+                    console.error("Error fetching suggestions:", error);
+                }
+            } else {
+                suggestionBox.innerHTML = '';
+            }
+        });
+    </script>
+</body>
+</html>

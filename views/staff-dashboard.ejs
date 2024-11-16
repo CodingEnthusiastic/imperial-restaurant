@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard</title>
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            padding: 20px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        /* Form Container */
+        .form-container {
+            background-color: #fff;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 600px;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input[type="submit"] {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        #suggestionsList {
+            border: 1px solid #ccc;
+            padding: 5px;
+            position: absolute;
+            background-color: white;
+            max-height: 150px;
+            overflow-y: auto;
+            width: 300px;
+            margin-top: 5px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #suggestionsList li {
+            padding: 8px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        #suggestionsList li:hover {
+            background-color: #f1f1f1;
+        }
+
+        ul {
+            list-style-type: none;
+        }
+
+        li {
+            background-color: #fff;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        li strong {
+            font-size: 18px;
+            color: #333;
+        }
+
+        li p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        form button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        form button:hover {
+            background-color: #c82333;
+        }
+
+        /* Navigation Styling */
+        nav {
+            background-color: #343a40;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        nav a:hover {
+            background-color: #007BFF;
+        }
+
+        nav a.active {
+            background-color: #28a745;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .form-container {
+                width: 100%;
+                margin: 10px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Your Staff Dashboard</h1>
+
+    <nav>
+        <a href="/staff-dashboard" class="active">Home</a>
+        <a href="/about">About Us</a>
+        
+        <a href="/login">Logout</a>
+    </nav>
+
+    <!-- Filter Form for Dishes and Orders -->
+    <div class="form-container">
+        <h2>Filter Dishes</h2>
+        <form action="/staff-dashboard" method="GET">
+            <label for="nameFilter">Dish Name:</label>
+            <input type="text" id="nameFilter" name="nameFilter" value="<%= nameFilter %>" oninput="fetchDishes(this.value)">
+            <ul id="suggestionsList" style="display:none;">
+                <!-- Suggestions will be displayed here -->
+            </ul>
+
+            <label for="priceFilter">Price Range:</label>
+            <input type="text" id="priceFilter" name="priceFilter" placeholder="e.g., 10-20" value="<%= priceFilter %>">
+
+            <label for="status">Order Status:</label>
+            <select name="statusFilter" id="status">
+                <option value="">All</option>
+                <option value="Pending" <%= statusFilter === 'Pending' ? 'selected' : '' %>>Pending</option>
+                <option value="Completed" <%= statusFilter === 'Completed' ? 'selected' : '' %>>Completed</option>
+            </select>
+            
+            <label for="sort">Sort By:</label>
+            <select name="sortFilter" id="sort">
+                <option value="oldest" <%= sortFilter === 'oldest' ? 'selected' : '' %>>Oldest</option>
+                <option value="newest" <%= sortFilter === 'newest' ? 'selected' : '' %>>Newest</option>
+            </select>
+
+            <input type="submit" value="Apply Filters">
+        </form>
+    </div>
+
+    <!-- Available Dishes List -->
+    <h2>Available Dishes</h2>
+<ul>
+    <% dishes.forEach(dish => { %>
+        <li>
+            <strong><%= dish.dish_name %></strong>
+            <p>Price: $<%= dish.price %></p>
+            <p><%= dish.description %></p>
+
+            <!-- Delete Dish Button -->
+            <form action="/staff/delete-dish/<%= dish.id %>" method="POST" style="display:inline;">
+                <button type="submit">Delete Dish</button>
+            </form>
+
+            <!-- Edit Dish Button -->
+            <form action="/staff/edit-dish/<%= dish.id %>" method="GET" style="display:inline;">
+                <button type="submit">Edit Dish</button>
+            </form>
+        </li>
+    <% }) %>
+</ul>
+    <!-- Orders List -->
+    <h2>Orders</h2>
+    <ul>
+        <% orders.forEach(order => { %>
+            <li>
+                <strong>Order by <%= order.user_name %> (Order Date: <%= order.order_date %>)</strong>
+                <p>Status: <%= order.status %></p>
+                <ul>
+                    <% order.dishes.forEach(dish => { %>
+                        <li><%= dish.quantity %> x <%= dish.dish_name %></li>
+                    <% }) %>
+                </ul>
+    
+                <% if (order.status === 'Pending') { %>
+                    <!-- Complete Order Button -->
+                    <form action="/staff/complete-order/<%= order.id %>" method="POST" style="display:inline;">
+                        <button type="submit" style="background-color: green; color: white; padding: 8px 16px; border-radius: 5px;">Complete Order</button>
+                    </form>
+                <% } else if (order.status === 'Completed') { %>
+                    <!-- Mark Completed Button -->
+                    <button disabled style="background-color: gray; color: white; padding: 8px 16px; border-radius: 5px;">Completed</button>
+                <% } %>
+            </li>
+        <% }) %>
+    </ul>
+    
+
+    <script>
+        // Fetch matching dishes as the user types
+        function fetchDishes(query) {
+            const suggestionsList = document.getElementById('suggestionsList');
+            if (!query) {
+                suggestionsList.style.display = 'none';
+                return;
+            }
+
+            fetch(`/autocomplete-dish?search=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    suggestionsList.innerHTML = '';  // Clear previous suggestions
+                    if (data.length === 0) {
+                        suggestionsList.style.display = 'none';
+                        return;
+                    }
+
+                    data.forEach(dish => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = dish;
+                        listItem.onclick = () => {
+                            document.getElementById('nameFilter').value = dish;
+                            suggestionsList.style.display = 'none';
+                        };
+                        suggestionsList.appendChild(listItem);
+                    });
+
+                    suggestionsList.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error fetching dish names:', error);
+                });
+        }
+
+        // Close suggestions list if the user clicks outside
+        document.addEventListener('click', (e) => {
+            const suggestionsList = document.getElementById('suggestionsList');
+            if (!e.target.closest('#nameFilter') && !e.target.closest('#suggestionsList')) {
+                suggestionsList.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

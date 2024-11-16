@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Chefs</title>
+  <style>
+    /* General reset */
+    body, h1, h2, h3, form, table {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      box-sizing: border-box;
+    }
+
+    /* Body styling */
+    body {
+      background-color: #f4f4f9;
+      color: #333;
+      padding: 20px;
+    }
+
+    /* Header styling */
+    header {
+      background-color: #4CAF50;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+
+    header a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    header a:hover {
+      text-decoration: underline;
+    }
+
+    /* Navbar styling */
+    nav {
+      background-color: black; /* Black navbar */
+      padding: 10px;
+      text-align: center;
+    }
+
+    nav a {
+      margin: 0 15px;
+      font-size: 16px;
+      color: white; /* White text for navbar */
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+      color: #4CAF50; /* Green hover effect */
+    }
+
+    /* Table styling */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    table th, table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    table th {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    /* Hover effects for table rows */
+    table tr:hover {
+      background-color: #f2f2f2;
+      transform: scale(1.02);
+      transition: transform 0.2s ease-in-out;
+    }
+
+    /* Form styling */
+    form {
+      margin-top: 20px;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    form label {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    form input, form select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    form button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background-color 0.3s ease;
+    }
+
+    form button:hover {
+      background-color: #45a049;
+      transform: scale(1.05);
+    }
+
+    /* Responsive Design */
+    @media screen and (max-width: 768px) {
+      table, form {
+        width: 100%;
+        margin: 0;
+      }
+
+      table th, table td {
+        font-size: 14px;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Manage Chefs</h1>
+  </header>
+  
+  <nav>
+    <a href="/admin-dashboard">Go to Dashboard</a>
+    <a href="/admin/view-bills">View Bills</a>
+    <a href="/login">Logout</a>
+  </nav>
+<br><br>
+  <h2>Filter Chefs</h2>
+  <form action="/admin/manage-chefs" method="GET">
+    <label for="attribute">Select Attribute:</label>
+    <select name="attribute" id="attribute" onchange="toggleInputField()">
+      <option value="">--Select Attribute--</option>
+      <option value="specialization">Specialization</option>
+      <option value="email">Email</option> <!-- Changed to email -->
+    </select>
+  
+    <label for="value">Select Value:</label>
+    <select name="value" id="value">
+      <option value="">--Select Value--</option>
+      <option value="Italian">Italian</option>
+      <option value="Chinese">Chinese</option>
+      <option value="Indian">Indian</option>
+      <option value="French">French</option>
+    </select>
+  
+    <label for="email" id="email_label" style="display: none;">Enter Email:</label>
+    <input type="email" id="email" name="email" style="display: none;" placeholder="Enter chef's email">
+
+    <button type="submit">Filter</button>
+  </form>  
+
+  <hr>
+  <h2>Filtered Chefs</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Specialization</th>
+        <th>Chef ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (chefs && chefs.length > 0) { %>
+        <% chefs.forEach(chef => { %>
+          <tr>
+            <td><%= chef.email %></td>
+            <td><%= chef.specialization %></td>
+            <td><%= chef.id %></td>
+          </tr>
+        <% }) %>
+      <% } else { %>
+        <tr>
+          <td colspan="3">No chefs found matching the filter.</td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+  <br>
+  <a href="/admin/manage-chefs">Back to Filter</a>
+  <hr>
+
+  <h2>Add a New Chef</h2>
+  <form action="/admin/add-chef" method="POST">
+    <label for="chef_name">Chef Name:</label>
+    <input type="text" id="chef_name" name="chef_name" required>
+
+    <label for="specialization">Specialization:</label>
+    <select name="specialization" id="specialization">
+      <option value="Italian">Italian</option>
+      <option value="Chinese">Chinese</option>
+      <option value="Indian">Indian</option>
+      <option value="French">French</option>
+    </select>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+
+    <button type="submit">Add Chef</button>
+  </form>
+
+  <hr>
+
+  <h2>All Chefs</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Chef Email</th>
+        <th>Specialization</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% chefs.forEach(chef => { %>
+        <tr>
+          <td><%= chef.email %></td> <!-- Chef Name -->
+          <td><%= chef.specialization %></td>
+          <td>
+            <form action="/admin/edit-chef/<%= chef.id %>" method="POST" style="display:inline;">
+              <select name="specialization" required>
+                <option value="Italian" <%= chef.specialization === 'Italian' ? 'selected' : '' %>>Italian</option>
+                <option value="Chinese" <%= chef.specialization === 'Chinese' ? 'selected' : '' %>>Chinese</option>
+                <option value="Indian" <%= chef.specialization === 'Indian' ? 'selected' : '' %>>Indian</option>
+                <option value="French" <%= chef.specialization === 'French' ? 'selected' : '' %>>French</option>
+              </select>
+              <button type="submit">Edit</button>
+            </form>
+            <form action="/admin/delete-chef/<%= chef.id %>" method="POST" style="display:inline;">
+              <button type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+
+  <script>
+    // Function to show/hide the value dropdown or text field based on the selected attribute
+    function toggleInputField() {
+        const attribute = document.getElementById('attribute').value;
+        const emailField = document.getElementById('email');
+        const emailLabel = document.getElementById('email_label');
+        const valueField = document.getElementById('value');
+        
+        if (attribute === 'email') {
+          emailField.style.display = 'inline';
+          emailLabel.style.display = 'inline';
+          valueField.style.display = 'none';
+        } else if (attribute === 'specialization') {
+          emailField.style.display = 'none';
+          emailLabel.style.display = 'none';
+          valueField.style.display = 'inline';
+        } else {
+          emailField.style.display = 'none';
+          emailLabel.style.display = 'none';
+          valueField.style.display = 'none';
+        }
+    }
+  </script>
+</body>
+</html>

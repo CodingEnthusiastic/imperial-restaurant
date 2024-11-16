@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px 20px;
+      background-color: #333;
+      color: white;
+      height: 40px; /* Increased height for navbar */
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin-left: 10px;
+      font-size: 16px;
+      transition: opacity 0.3s, transform 0.3s, background-color 0.3s;
+    }
+    nav a:hover {
+      opacity: 0.7;
+      transform: scale(1.1);
+      background-color: white; /* White background for hover effect */
+      color: #333; /* Change text color to dark */
+      padding: 5px 10px; /* Adding padding to the hover effect */
+      border-radius: 5px;
+    }
+    .menu-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px 0;
+    }
+    .dish {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin: 10px;
+      width: 80%;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .dish:hover {
+      transform: scale(1.05); /* Scaling the card on hover */
+      box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.2); /* Increase the shadow effect on hover */
+    }
+    .dish h3 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .dish p {
+      margin: 5px 0;
+    }
+    h1 {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav>
+    <a href="/">Home</a>
+    <div>
+      <a href="/login">Login</a>
+      <a href="/register">Register</a>
+    </div>
+  </nav>
+
+  <!-- Menu Section -->
+  <h1>Our Menu</h1>
+
+  <div class="menu-card">
+    <% dishes.forEach(dish => { %>
+      <div class="dish">
+        <h3><%= dish.dish_name %></h3>
+        <p><strong>Price:</strong> $<%= dish.price %></p>
+        <p><strong>Description:</strong> <%= dish.description %></p>
+      </div>
+    <% }); %>
+  </div>
+
+</body>
+</html>

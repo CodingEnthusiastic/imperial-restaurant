@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        /* Navbar Styling */
+        /* .navbar {
+            background-color: #007bff;
+            height: 60px;
+            padding: 10px;
+        } */
+        /* body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+} */
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    padding: 15px 30px;
+}
+
+.navbar-left ul, .navbar-right ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+}
+
+.navbar-left li, .navbar-right li {
+    margin-right: 20px;
+}
+
+.navbar-left li:last-child, .navbar-right li:last-child {
+    margin-right: 0;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    padding: 8px 16px;
+    display: block;
+}
+
+.navbar a:hover {
+    background-color: #575757;
+    border-radius: 4px;
+}
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            flex-direction: row;
+            gap:0.2rem;
+        }
+        
+        .navbar-nav .nav-item .nav-link {
+            color: white;
+        }
+
+        .navbar-nav .nav-item .nav-link:hover {
+            color: #f1f1f1;
+        }
+
+        /* Full-width carousel */
+        #dishCarousel {
+            width: 100%;
+            height: 500px;
+            border: 5px solid #007bff; /* Border for distinction */
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .carousel-inner {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        /* #fit-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+} */
+#fit-image {
+  object-fit: cover;
+  height: 100%;
+  width: 100%;
+  object-position: center;
+}
+
+        .carousel-item {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .carousel-item.active {
+            opacity: 1;
+        }
+
+        /* .carousel-item img {
+            object-fit: cover;
+            width: 100%;
+            height: auto;
+            max-height: 500px;
+            object-fit: contain;
+        } */
+        .carousel-item img {
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+            object-position: center;
+        }
+
+        /* Full-width carousel with rectangular images */
+#dishCarousel {
+    width: 100%;
+    height: 500px;
+    border: 5px solid #000000; /* Border for distinction */
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Remove the aspect ratio for the image */
+.carousel-inner {
+    display: flex;
+    flex-wrap: wrap;
+}
+.carousel-item{
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 100%;
+    height: 100%;
+}
+.carousel-item img {
+
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.carousel-indicators li:hover {
+    background-color: #333;
+    cursor: pointer;
+}
+
+
+/* Caption styling */
+.carousel-caption {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 10px;
+    font-size: 1.25rem;
+    text-align: center;
+}
+
+/* Indicator Section (White Part) */
+.carousel-indicators-container {
+    display: flex;
+    justify-content: center;
+    background-color: white;
+    padding: 10px 0;
+}
+
+.carousel-indicators {
+    list-style-type: none;
+    display: flex;
+    padding: 0;
+    margin: 0;
+}
+
+.carousel-indicators li {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #007bff;
+    margin: 0 5px;
+    cursor: pointer;
+}
+
+.carousel-indicators .active {
+    background-color: #0056b3;
+}
+.nav-link:hover {
+    transform: scale(1.1);
+    color: #fff;
+    background-color: black;
+    font-weight: bold;
+    transition: transform 0.2s ease-in-out;
+}
+#best{
+    /* display: flex; */
+    text-align: center;
+}
+
+        .carousel-caption {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 10px;
+            font-size: 1.25rem;
+            text-align: center;
+        }
+        .nav-link:hover{
+            transform: scale(1.25rem);
+            background-color: black;
+            color: azure;
+            font-weight: bolder;
+        }
+        /* Section Divider (hr) */
+        hr {
+            margin-top: 40px;
+            margin-bottom: 40px;
+            border: 1px solid #e0e0e0;
+        }
+
+        footer {
+            background-color: black;
+            color: white;
+            height: 100px;
+            text-align: center;
+            line-height: 100px;
+        }
+
+        /* Dish Cards Styling */
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+
+        .dish-card {
+            width: 18rem;
+            margin: 15px;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .dish-card:hover {
+            transform: scale(1.05);
+        }
+
+        .dish-card img {
+            height: 200px;
+            object-fit: cover;
+        }
+
+        @media (max-width: 768px) {
+    .card-container {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/about">About Us</a></li>
+                <li><a href="/menu">Menu Card</a></li>
+                <li><a href="/contact">Contact</a></li>
+            </ul>
+        </div>
+        <div class="navbar-right">
+            <ul>
+                <li><a href="/login">Login</a></li>
+                <li><a href="/register">Register</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Carousel/Slider for Dishes -->
+    <div id="dishCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            <!-- Slide 1 -->
+            <div class="carousel-item active">
+                <img src="https://www.fusion6.com.au/wp-content/uploads/2021/04/Indian-Dishes-You-Need-to-Try.jpg" class="d-block" alt="Imperial Inn">
+                <div class="carousel-caption">
+                    <p>Welcome to Imperial Inn - Your Home Away From Home</p>
+                </div>
+            </div>
+            <!-- Slide 2 -->
+            <div class="carousel-item">
+                <img src="https://2.bp.blogspot.com/-OU_L_dlS_G0/Wx9rVpMKeVI/AAAAAAAAAEE/lL6pyCPBVoQkBxbpYZg9wRt6-Lce51C7ACLcBGAs/s1600/imperial%2Binn.jpg" class="d-block" alt="Imperial Inn">
+                <div class="carousel-caption">
+                    <p>Relax and Unwind in Our Luxurious Rooms</p>
+                </div>
+            </div>
+            <!-- Slide 3 -->
+            <div class="fit-image carousel-item">
+                <img id="fit-image" src="https://www.indifi.com/blog/wp-content/uploads/2019/12/Vegetarian-Restaurant.jpg" class="d-block" alt="Imperial Inn">
+                <div class="carousel-caption">
+                    <p>Experience Exquisite Dining at Our Hotel Restaurant</p>
+                </div>
+            </div>
+            <!-- Slide 4 -->
+            <div class="fiter carousel-item">
+                <img src="https://www.groovehq.com/blog/wp-content/uploads/2019/12/good-customer-service-reviews-examples1-1138x531.png" class="d-block" alt="Imperial Inn">
+                <div class="carousel-caption">
+                    <p>Book Your Stay Now and Enjoy Unmatched Comfort</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Carousel Controls -->
+        <button class="carousel-control-prev" type="button" data-bs-target="#dishCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#dishCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+        <div class="carousel-indicators-container">
+            <ul class="carousel-indicators">
+                <li data-bs-target="#dishCarousel" data-bs-slide-to="0" class="active"></li>
+                <li data-bs-target="#dishCarousel" data-bs-slide-to="1"></li>
+                <li data-bs-target="#dishCarousel" data-bs-slide-to="2"></li>
+                <li data-bs-target="#dishCarousel" data-bs-slide-to="3"></li>
+                <!-- More indicators if necessary -->
+            </ul>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- Featured Dishes Section -->
+    <div class="featured-dishes">
+        <h2 id="best">Featured Indian Dishes</h2>
+        <div class="card-container">
+            <!-- 12 Dish Cards -->
+            <div class="card dish-card">
+                <img src="https://miro.medium.com/max/1200/1*MkWAwWOVFvOlSuzwELCjfw.jpeg" class="card-img-top" alt="Butter Chicken">
+                <div class="card-body">
+                    <h5 class="dish-name">Veg Thali</h5>
+                    <p class="dish-description">A thali with all essential nutrients and vitamins.</p>
+                </div>
+            </div>
+            <div class="card dish-card">
+                <img src="https://i2.wp.com/vegecravings.com/wp-content/uploads/2017/03/veg-hakka-noodles-recipe-with-step-by-step-instructions.jpg?fit=1838%2C1493&quality=65&strip=all&ssl=1" class="card-img-top" alt="Dosa">
+                <div class="card-body">
+                    <h5 class="dish-name">Veg Hakka Noodles</h5>
+                    <p class="dish-description">Noodles that are served with spicy chutneys and warmth.</p>
+                </div>
+            </div>
+            <div class="card dish-card">
+                <img src="https://i.ytimg.com/vi/CbhkuYs58N4/maxresdefault.jpg" class="card-img-top" alt="Pav Bhaji">
+                <div class="card-body">
+                    <h5 class="dish-name">Paneer Tikka</h5>
+                    <p class="dish-description">A spicy mashed vegetable paneer with curry served with buttered bread rolls.</p>
+                </div>
+            </div>
+            <div class="card dish-card">
+                <img src="https://2.bp.blogspot.com/-OU_L_dlS_G0/Wx9rVpMKeVI/AAAAAAAAAEE/lL6pyCPBVoQkBxbpYZg9wRt6-Lce51C7ACLcBGAs/s1600/imperial%2Binn.jpg" class="card-img-top" alt="Chole Bhature">
+                <div class="card-body">
+                    <h5 class="dish-name">Chole Bhature</h5>
+                    <p class="dish-description">Spicy chickpea curry served with deep-fried bread.</p>
+                </div>
+            </div>
+            <div class="card dish-card">
+                <img src="https://d2ebzu6go672f3.cloudfront.net/media/content/images/healthy-eating-stirfry-bigstock-cooking-Vegetables-Meal-In-C-79308046.jpg" class="card-img-top" alt="Butter Chicken">
+                <div class="card-body">
+                    <h5 class="dish-name">Brocolli Cauliflower Mix Veg</h5>
+                    <p class="dish-description">A healthy diet with taste of greatness.</p>
+                </div>
+            </div>
+            <div class="card dish-card">
+                <img src="https://i.ytimg.com/vi/14bymgciN8s/maxresdefault.jpg" class="card-img-top" alt="Dosa">
+                <div class="card-body">
+                    <h5 class="dish-name">Honey Chilli Potatoes</h5>
+                    <p class="dish-description">Hot and Sweet in one dish , specially made for health conscious people.</p>
+                </div>
+            </div>
+            <div class="card dish-card">
+                <img src="https://media.timeout.com/images/102813002/image.jpg" class="card-img-top" alt="Pav Bhaji">
+                <div class="card-body">
+                    <h5 class="dish-name">Special Veg 65</h5>
+                    <p class="dish-description">A spicy mashed vegetable curry served with buttered bread rolls.</p>
+                </div>
+            </div>
+            <div class="card dish-card">
+                <img src="https://i.pinimg.com/originals/d1/6b/99/d16b99aaae58a45b59040a1b911a1c0c.jpg" class="card-img-top" alt="Chole Bhature">
+                <div class="card-body">
+                    <h5 class="dish-name">Vegan tower</h5>
+                    <p class="dish-description">Ever seen towerof vegetables , see it in our hotel..</p>
+                </div>
+            </div>
+            <div class="card dish-card">
+                <img src="https://vismaifood.com/storage/app/uploads/public/45a/29b/a17/thumb__700_0_0_0_auto.jpg" class="card-img-top" alt="Butter Chicken">
+                <div class="card-body">
+                    <h5 class="dish-name">All variety of Dosa</h5>
+                    <p class="dish-description">Crispy dosas served with sambar an chutney.</p>
+                </div>
+            </div>
+            <div class="card dish-card">
+                <img src="http://blog.travel-exploration.com/wp-content/uploads/2013/06/Moroccan-Vegetable-Dish.jpg" class="card-img-top" alt="Dosa">
+                <div class="card-body">
+                    <h5 class="dish-name">Pumpkin</h5>
+                    <p class="dish-description">Crispy pumpkin dish served with sambar type gravy.</p>
+                </div>
+            </div>
+            <div class="card dish-card">
+                <img src="https://preview.redd.it/pav-bhaji-delicious-pav-bhaji-recipe-v0-379r3v3ss7fa1.jpg?auto=webp&s=5e788a8e3f04bc076f8f26eee934083f04fb75f5" class="card-img-top" alt="Pav Bhaji">
+                <div class="card-body">
+                    <h5 class="dish-name">Pav Bhaji</h5>
+                    <p class="dish-description">A spicy mashed vegetable curry served with buttered bread rolls.</p>
+                </div>
+            </div>
+            <div class="card dish-card">
+                <img src="https://www.indifi.com/blog/wp-content/uploads/2019/12/Vegetarian-Restaurant.jpg" class="card-img-top" alt="Chole Bhature">
+                <div class="card-body">
+                    <h5 class="dish-name">Unlimited Thali</h5>
+                    <p class="dish-description">Eat until you get satisfied...</p>
+                </div>
+            </div>
+            <!-- Add more cards as needed -->
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2024 Imperial Hotel. All rights reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+    <script>$('.carousel').carousel({
+        interval: 1000  // Change the interval to 1 second
+    });</script>
+</body>
+</html>

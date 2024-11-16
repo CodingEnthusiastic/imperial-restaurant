@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill Details</title>
+    <style>
+        /* Centered Bill Box styling */
+        .bill-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .bill-box {
+            width: 400px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        .bill-box h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .bill-box p {
+            font-size: 1.1em;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .pay-section {
+            margin-top: 20px;
+        }
+        .pay-section input[type="text"] {
+            padding: 0.5em;
+            width: 80%;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .pay-button {
+            display: block;
+            width: 100%;
+            padding: 0.8em;
+            font-size: 1em;
+            color: white;
+            background-color: #28a745;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 15px;
+        }
+        .pay-button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="bill-container">
+        <div class="bill-box">
+            <h1>Bill Details</h1>
+            <p>Order ID: <%= bill.id %></p>
+            <p>Customer Email: <%= email.email %></p>
+            <p>Dishes Ordered : </p>
+            <% orderedDishes.forEach(orders => { %>
+                <li><%= orders.dish_name %> - Quantity: <%= orders.quantity %></li>
+            <% }); %>
+            <p>Total Amount: $<%= bill.total_amount %></p>
+            <p>Created At: <%= bill.bill_date %></p>
+            <p>Status: <%= bill.bill_paid %></p>
+            
+            <!-- Payment section -->
+            <% if (bill.bill_paid === 'pending') { %>
+                <div class="pay-section">
+                    <input type="text" id="upiId" placeholder="Enter UPI ID to Pay">
+                    <button class="pay-button" onclick="payBill('<%= bill.id %>')">Pay Bill</button>
+                </div>
+            <% } else { %>
+                <p style="color: green; font-weight: bold;">Bill has been paid.</p>
+            <% } %>
+        </div>
+    </div>
+
+    <script>
+        // Function to handle the bill payment
+        function payBill(billId) {
+            const upiId = document.getElementById('upiId').value;
+            if (!upiId) {
+                alert('Please enter your UPI ID to complete payment.');
+                return;
+            }
+
+            // Send a POST request to update the bill status
+            fetch(`/customer/pay-bill/${billId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ upiId: upiId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Payment successful. Bill status updated.');
+                    location.reload();
+                } else {
+                    alert('Payment failed. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
